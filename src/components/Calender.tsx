@@ -9,9 +9,18 @@ import {
 import CalendarHeader from "./CalenderHeader";
 import CalendarGrid from "./CalenderGrid";
 
+interface Event {
+  id: string;
+  name: string;
+  color: string;
+  resourceIndex: number;
+  dayIndex: number;
+}
+
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [resources, setResources] = useState<string[]>(["Resource 1"]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   const goToPreviousMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const goToNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
@@ -29,6 +38,36 @@ const Calendar: React.FC = () => {
     start: startOfMonth(currentDate),
     end: endOfMonth(currentDate),
   });
+  const addEvent = (resourceIndex: number, dayIndex: number) => {
+    const newEvent: Event = {
+      id: `event-${events.length + 1}`,
+      name: `New Event ${events.length + 1}`,
+      color: `hsl(${Math.random() * 360}, 70%, 80%)`,
+      resourceIndex,
+      dayIndex,
+    };
+    setEvents([...events, newEvent]);
+  };
+
+  const removeEvent = (id: string) => {
+    if (window.confirm("Are you sure you want to remove this event?")) {
+      setEvents(events.filter((event) => event.id !== id));
+    }
+  };
+
+  const moveEvent = (
+    id: string,
+    newResourceIndex: number,
+    newDayIndex: number
+  ) => {
+    setEvents(
+      events.map((event) =>
+        event.id === id
+          ? { ...event, resourceIndex: newResourceIndex, dayIndex: newDayIndex }
+          : event
+      )
+    );
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -48,6 +87,10 @@ const Calendar: React.FC = () => {
         days={daysInMonth}
         resources={resources}
         onRemoveResource={removeResource}
+        events={events}
+        onAddEvent={addEvent}
+        onRemoveEvent={removeEvent}
+        onMoveEvent={moveEvent}
       />
     </div>
   );
