@@ -2,14 +2,6 @@ import React from "react";
 import { format, isToday } from "date-fns";
 import Event from "./Event";
 
-interface Event {
-  id: string;
-  name: string;
-  color: string;
-  resourceIndex: number;
-  dayIndex: number;
-}
-
 interface CalendarGridProps {
   days: Date[];
   resources: string[];
@@ -22,7 +14,23 @@ interface CalendarGridProps {
     newResourceIndex: number,
     newDayIndex: number
   ) => void;
+  onResizeEvent: (
+    id: string,
+    newStartDayIndex: number,
+    newEndDayIndex: number
+  ) => void;
 }
+
+interface Event {
+  id: string;
+  name: string;
+  color: string;
+  resourceIndex: number;
+  startDayIndex: number;
+  endDayIndex: number;
+}
+
+const CELL_WIDTH = 100; // Adjust this value based on your cell width
 
 const CalendarGrid: React.FC<CalendarGridProps> = ({
   days,
@@ -32,6 +40,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   onAddEvent,
   onRemoveEvent,
   onMoveEvent,
+  onResizeEvent,
 }) => {
   const handleDragStart = (e: React.DragEvent, eventId: string) => {
     e.dataTransfer.setData("text/plain", eventId);
@@ -73,7 +82,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
             ))}
           </tr>
         </thead>
-
         <tbody>
           {resources.map((resource, resourceIndex) => (
             <tr key={resource}>
@@ -88,36 +96,53 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   </button>
                 </div>
               </td>
-              {days.map((day, dayIndex) => (
-                <td
-                  key={day.toISOString()}
-                  className="border p-2 min-w-[100px] h-[50px]"
-                  onDoubleClick={() => onAddEvent(resourceIndex, dayIndex)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, resourceIndex, dayIndex)}
+              <td>
+                <div
+                  className="relative"
+                  style={{
+                    height: "50px",
+                    width: `${days.length * CELL_WIDTH}px`,
+                  }}
                 >
                   {events
-                    .filter(
-                      (event) =>
-                        event.resourceIndex === resourceIndex &&
-                        event.dayIndex === dayIndex
-                    )
+                    .filter((event) => event.resourceIndex === resourceIndex)
                     .map((event) => (
-                      <div
+                      <Event
                         key={event.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, event.id)}
-                      >
-                        <Event
-                          id={event.id}
-                          name={event.name}
-                          color={event.color}
-                          onClose={onRemoveEvent}
-                        />
-                      </div>
+                        id={event.id}
+                        name={event.name}
+                        color={event.color}
+                        startDayIndex={event.startDayIndex}
+                        endDayIndex={event.endDayIndex}
+                        onClose={onRemoveEvent}
+                        onResize={onResizeEvent}
+                        onDragStart={handleDragStart}
+                        cellWidth={CELL_WIDTH}
+                      />
                     ))}
-                </td>
-              ))}
+                  {days.map((day, dayIndex) => (
+                    <div
+                      key={day.toISOString()}
+                      className="absolute border-r border-b"
+                      style={{
+                        left: `${dayIndex * CELL_WIDTH}px`,
+                        top: 0,
+                        width: `${CELL_WIDTH}px`,
+                        height: "100%",
+                      }}
+                      onDoubleClick={() => onAddEvent(resourceIndex, dayIndex)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, resourceIndex, dayIndex)}
+                    >
+                      <div
+                        className={`h-full w-full ${
+                          isToday(day) ? "bg-blue-100" : ""
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

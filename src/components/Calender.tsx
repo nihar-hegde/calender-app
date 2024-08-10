@@ -14,7 +14,8 @@ interface Event {
   name: string;
   color: string;
   resourceIndex: number;
-  dayIndex: number;
+  startDayIndex: number;
+  endDayIndex: number;
 }
 
 const Calendar: React.FC = () => {
@@ -44,28 +45,53 @@ const Calendar: React.FC = () => {
       name: `New Event ${events.length + 1}`,
       color: `hsl(${Math.random() * 360}, 70%, 80%)`,
       resourceIndex,
-      dayIndex,
+      startDayIndex: dayIndex,
+      endDayIndex: dayIndex,
     };
     setEvents([...events, newEvent]);
   };
-
   const removeEvent = (id: string) => {
     if (window.confirm("Are you sure you want to remove this event?")) {
       setEvents(events.filter((event) => event.id !== id));
     }
   };
 
-  const moveEvent = (
+  const resizeEvent = (
     id: string,
-    newResourceIndex: number,
-    newDayIndex: number
+    newStartDayIndex: number,
+    newEndDayIndex: number
   ) => {
     setEvents(
       events.map((event) =>
         event.id === id
-          ? { ...event, resourceIndex: newResourceIndex, dayIndex: newDayIndex }
+          ? {
+              ...event,
+              startDayIndex: newStartDayIndex,
+              endDayIndex: newEndDayIndex,
+            }
           : event
       )
+    );
+  };
+
+  const moveEvent = (
+    id: string,
+    newResourceIndex: number,
+    newStartDayIndex: number
+  ) => {
+    setEvents(
+      events.map((event) => {
+        if (event.id === id) {
+          const duration = event.endDayIndex - event.startDayIndex;
+          return {
+            ...event,
+            resourceIndex: newResourceIndex,
+            startDayIndex: newStartDayIndex,
+            endDayIndex: newStartDayIndex + duration,
+          };
+        }
+        return event;
+      })
     );
   };
 
@@ -91,6 +117,7 @@ const Calendar: React.FC = () => {
         onAddEvent={addEvent}
         onRemoveEvent={removeEvent}
         onMoveEvent={moveEvent}
+        onResizeEvent={resizeEvent}
       />
     </div>
   );
